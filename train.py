@@ -28,12 +28,14 @@ path_txt = path.readlines()
 
 if path_txt:
     a = input('数据地址：{}, Y/N? '.format(str(path_txt[-1])))
-    if a == 'y':
+    if a == 'y' or a =='Y':
         path_txt=path_txt[-1]
-    elif a == 'n':
+    elif a == 'n' or a =='N':
         path_txt = input('请输入数据地址：')
         path.write('\n' + path_txt)
-
+    else: 
+        raise TypeError('输入格式不正确')
+        
 else:
     path_txt = input('请输入数据地址：')
     path.write(path_txt)
@@ -120,7 +122,7 @@ X_test=tf.cast(X_test, dtype=tf.float32)
 b_s=16
 epoches=100
  
-cnn_clf=sound.cnn()
+cnn_clf=sound.cnn(5)
 
 data_train_all=tf.data.Dataset.from_tensor_slices((X_data,Y_data))
 data_train=data_train_all.take(1800).shuffle(500).batch(b_s).prefetch(1)
@@ -130,7 +132,7 @@ history=cnn_clf.fit(data_train,
                     epochs=epoches,
                     validation_data=data_valid,
                     callbacks=[keras.callbacks.EarlyStopping(monitor='val_accuracy',
-                                                             min_delta=0.0001,
+                                                             min_delta=0.001,
                                                              mode='max',
                                                              patience=7,
                                                              restore_best_weights=True)])
