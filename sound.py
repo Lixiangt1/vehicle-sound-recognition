@@ -33,7 +33,7 @@ def wavread(path):
     # wav_data=20*np.log10(wav_data/(2*10**(-5)))
     wav_data.shape = -1, nchannel
     wav_data=wav_data.T
-    wav_data=(wav_data-wav_data.mean(axis=1)[:,None])/(np.std(wav_data,axis=1)[:,None])
+    wav_data=(wav_data-wav_data.mean(axis=1)[:,None])/((np.max([[1e-5,x] for x in np.std(wav_data,axis=1)],axis=1))[:,None])
     return nchannel,fs, wav_data
 
 def fea_extra(wav_data,fs,fre_low,fre_high):
@@ -58,7 +58,7 @@ def listdir(path):
         list_name.append(file_path)
     return list_name
 
-def data_generation(path,fre_low=50,fre_high=1500,method='svm'):
+def data_generation(path,fre_low=20,fre_high=1500,method='svm'):
     if method=='svm':
         dim=64
     elif method=='cnn':
@@ -70,6 +70,7 @@ def data_generation(path,fre_low=50,fre_high=1500,method='svm'):
 
     X_data = []
     Y_data = []
+    label=0
     for name in listdir(path):
         for file in listdir(name):
             n,fs,data=wavread(file)
@@ -77,16 +78,9 @@ def data_generation(path,fre_low=50,fre_high=1500,method='svm'):
                 fre,t,fea=fea_extra(data[i],fs,fre_low,fre_high)
                 x_data=cv2.resize(fea,(dim,dim))
                 X_data.append(x_data)
-                if classes[0] in file:
-                    Y_data.append(0)
-                elif  classes[1] in file:
-                    Y_data.append(1)
-                elif  classes[2] in file:
-                    Y_data.append(2)
-                elif  classes[3] in file:
-                    Y_data.append(3)
-                elif  classes[4] in file:
-                    Y_data.append(4)
+                Y_data.append(label)
+        label += 1
+ 
     X_data=np.array(X_data)
     
     if method=='svm':
@@ -98,12 +92,12 @@ def data_generation(path,fre_low=50,fre_high=1500,method='svm'):
         return classes,X_data,Y_data,u,s
         
     elif method=='cnn':
-        maxvalue=X_data.max(axis=2).max(axis=1)
+        maxvalue=np.max([[1e-5,x] for x in X_data.max(axis=2).max(axis=1)],axis=1)
         X_data=X_data/(maxvalue[:,None,None])
         Y_data=np.array(Y_data)
         return classes,X_data,Y_data
 
-def data_test(test_path,u=0,s=1,fre_low=50,fre_high=1500,method='svm'):
+def data_test(test_path,u=0,s=1,fre_low=20,fre_high=1500,method='svm'):
     if method=='svm':
         dim=64
     elif method=='cnn':
@@ -114,6 +108,7 @@ def data_test(test_path,u=0,s=1,fre_low=50,fre_high=1500,method='svm'):
     classes = os.listdir(test_path)    
     X_data = []
     Y_data = []
+    label=0
     for name in listdir(test_path):
         for file in listdir(name):
             n,fs,data=wavread(file)
@@ -121,23 +116,16 @@ def data_test(test_path,u=0,s=1,fre_low=50,fre_high=1500,method='svm'):
                 fre,t,fea=fea_extra(data[i],fs,fre_low,fre_high)
                 x_data=cv2.resize(fea,(dim,dim))
                 X_data.append(x_data)
-                if classes[0] in file:
-                    Y_data.append(0)
-                elif  classes[1] in file:
-                    Y_data.append(1)
-                elif  classes[2] in file:
-                    Y_data.append(2)
-                elif  classes[3] in file:
-                    Y_data.append(3)
-                elif  classes[4] in file:
-                    Y_data.append(4)
+                Y_data.append(label)
+        label += 1
+        
     X_data=np.array(X_data)
     
     if method=='svm':
         X_data=X_data.reshape(-1,dim**2)
         X_data=(X_data-u[None,:])/(s[None,:])
     elif method=='cnn':
-        maxvalue=X_data.max(axis=2).max(axis=1)
+        maxvalue=np.max([[1e-5,x] for x in X_data.max(axis=2).max(axis=1)],axis=1)
         X_data=X_data/(maxvalue[:,None,None])
         
     Y_data=np.array(Y_data)    
@@ -146,22 +134,16 @@ def data_test(test_path,u=0,s=1,fre_low=50,fre_high=1500,method='svm'):
 
 def label_generation(classes,path):
     Y_data = []
+    label=0
     for name in listdir(path):
         for file in listdir(name):
-            if classes[0] in file:
-                Y_data.append(0)
-            elif  classes[1] in file:
-                Y_data.append(1)
-            elif  classes[2] in file:
-                Y_data.append(2)
-            elif  classes[3] in file:
-                Y_data.append(3)
-            elif  classes[4] in file:
-                Y_data.append(4)
+            Y_data.append(label)
+        label += 1
+        
     Y_data=np.array(Y_data)
     return Y_data
 
-def data_predict(train_path,predict_path,u=0,s=1,fre_low=50,fre_high=1500,method='svm'):
+def data_predict(train_path,predict_path,u=0,s=1,fre_low=20,fre_high=1500,method='svm'):
     if method=='svm':
         dim=64
     elif method=='cnn':
@@ -183,12 +165,12 @@ def data_predict(train_path,predict_path,u=0,s=1,fre_low=50,fre_high=1500,method
         X_data=X_data.reshape(-1,dim**2)
         X_data=(X_data-u[None,:])/(s[None,:])
     elif method=='cnn':
-        X_data=X_data/(X_data.max(axis=2).max(axis=1)[:,None,None])
+        X_data=X_data/(np.max([[1e-5,x] for x in X_data.max(axis=2).max(axis=1)],axis=1))[:,None,None]
         
     return classes,X_data
 
-def cnn():
-    model=resnet18(num_classes=5)
+def cnn(classes=5):
+    model=resnet18(num_classes=classes)
     model.compile(loss="sparse_categorical_crossentropy",
                 optimizer=keras.optimizers.Adam(lr=0.001,
                                                 beta_1=0.9,
