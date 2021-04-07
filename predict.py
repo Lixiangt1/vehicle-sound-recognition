@@ -10,6 +10,8 @@ import joblib
 import numpy as np
 import tensorflow as tf
 
+
+
 try:
     path=open('path.txt','r+')
 except:
@@ -19,11 +21,13 @@ path_txt=path.readlines()
 
 if path_txt:
     a=input('数据地址：{}, Y/N? '.format(str(path_txt[-1])))
-    if a=='y':
+    if a=='y' or a=='Y':
         path_txt=path_txt[-1]
-    elif a=='n':
+    elif a=='n' or a=='N':
         path_txt=input('请输入数据地址：')
         path.write('\n'+path_txt)
+    else: 
+        raise TypeError('输入格式不正确')
         
 else:
     path_txt=input('请输入数据地址：')
@@ -49,7 +53,7 @@ if method=='svm':
     print(result)
 
 elif method=='cnn':
-    cnn_clf=sound.cnn()
+    cnn_clf=sound.cnn(5)
     cnn_clf.load_weights('cnn_clf_weight').expect_partial()
     
     cls_predict,X_predict=sound.data_predict(train_path, predict_path,method='cnn')
